@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>JPL LIVE Cloud Controller</title><style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:white;font:16px Arial;padding:14px}.wrap{max-width:850px;margin:auto}h1{color:#ffce38}.card{background:#1d2b40;border:1px solid #354861;border-radius:14px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}input,button{font-size:16px;border:0;border-radius:9px;padding:12px;width:100%}input{background:#f5f6fa;color:#111}button{background:#ffca35;color:#111;font-weight:bold}.runs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.danger{background:#d94752;color:white}.wide{grid-column:1/-1}.muted{color:#b5c3d5;font-size:13px}@media(max-width:520px){.grid{grid-template-columns:1fr}}</style></head><body><div class="wrap"><h1>🏏 JPL LIVE — CLOUD CONTROL</h1><p class="muted">Phone controller • Internet-based remote scoring • JPL Season 8</p>
+<div class="card"><h3>Connect to your match</h3><div class="grid"><input id="room" value="JPL8LIVE" placeholder="Private room code"><button onclick="join()">CONNECT</button></div><p id="status" class="muted">Connecting…</p></div>
+<div class="card"><h3>Match setup</h3><div class="grid">
+<input id="tournament" value="JPL SEASON 8" placeholder="Tournament"><input id="match" value="MATCH LIVE" placeholder="Match name">
+<input id="teamA" value="TEAM A" placeholder="Batting team"><input id="teamB" value="TEAM B" placeholder="Bowling team">
+<input id="striker" value="BATSMAN 1" placeholder="Striker"><input id="nonStriker" value="BATSMAN 2" placeholder="Non-striker">
+<input id="bowler" value="BOWLER" placeholder="Bowler"><input id="target" type="number" placeholder="Target (optional)">
+<button class="wide" onclick="setup()">UPDATE GRAPHICS</button></div></div>
+<div class="card"><h3>Ball-by-ball scoring</h3><div class="runs">
+<button onclick="ev('0')">DOT 0</button><button onclick="ev('1')">1 RUN</button><button onclick="ev('2')">2 RUNS</button><button onclick="ev('3')">3 RUNS</button><button onclick="ev('4')">FOUR 4</button><button onclick="ev('6')">SIX 6</button><button onclick="ev('WD')">WIDE</button><button onclick="ev('NB')">NO BALL</button><button class="danger" onclick="ev('W')">WICKET</button>
+<button onclick="socket.emit('swap')">SWAP BATTERS</button><button onclick="note('FOUR!')">SHOW FOUR</button><button onclick="note('SIX!')">SHOW SIX</button><button onclick="note('WICKET!')">SHOW WICKET</button><button onclick="note('PLAYER OF THE MATCH')">PLAYER OF MATCH</button><input id="msg" placeholder="Custom message"><button onclick="note(v('msg'))">SHOW MESSAGE</button><button class="danger" onclick="if(confirm('Reset innings?'))socket.emit('reset')">RESET INNINGS</button></div>
+<p class="muted">Prototype: check official score manually. Complex extras/dismissals and over-change rules are not fully automated.</p></div></div>
+<script src="/socket.io/socket.io.js"></script><script>
+const socket=io();const v=id=>document.getElementById(id).value;
+function join(){socket.emit("join",v("room"));document.getElementById("status").textContent="Joining room "+v("room")+"…"}
+socket.on("connect",()=>{document.getElementById("status").textContent="Online — connecting to match";join()});
+socket.on("disconnect",()=>document.getElementById("status").textContent="Connection lost");
+socket.on("state",s=>document.getElementById("status").textContent="Connected • "+s.score+"/"+s.wickets+" • "+s.overs+"."+(s.balls%6)+" overs");
+function setup(){socket.emit("update",{tournament:v("tournament"),match:v("match"),teamA:v("teamA"),teamB:v("teamB"),striker:{name:v("striker"),runs:0,balls:0},nonStriker:{name:v("nonStriker"),runs:0,balls:0},bowler:{name:v("bowler"),runs:0,wickets:0,balls:0},target:Number(v("target"))||null})}
+function ev(e){socket.emit("event",e)}function note(n){socket.emit("update",{note:n})}
+</script></body></html>
