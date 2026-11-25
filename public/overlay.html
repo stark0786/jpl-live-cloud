@@ -1,80 +1,23 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JPL LIVE Lower Third Overlay</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JPL LIVE Overlay</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#fff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#fff}
 #stage{position:relative;width:1920px;height:1080px;transform-origin:top left}
 .lower-third{position:absolute;left:42px;right:42px;bottom:34px;display:grid;grid-template-columns:440px 1fr 410px;gap:14px;align-items:end}
-.panel{min-height:112px;background:linear-gradient(110deg,rgba(5,18,37,.96),rgba(12,43,72,.94));border:1px solid rgba(255,203,65,.95);border-left:6px solid #ffc83d;border-radius:10px;padding:12px 18px;box-shadow:0 5px 18px rgba(0,0,0,.35)}
-.label{font-size:16px;letter-spacing:2px;font-weight:800;color:#ffc83d;text-transform:uppercase;margin-bottom:7px}
-.scoreline{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.teams{font-size:19px;font-weight:800;line-height:1.25}
-.total{font-size:43px;font-weight:900;white-space:nowrap;color:#fff}
-.overs{font-size:18px;color:#ffd86b;font-weight:700;white-space:nowrap}
-.middle{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.batter{min-width:0}
-.player{font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.figures{font-size:25px;font-weight:900;margin-top:6px}
-.figures small{font-size:15px;color:#c8d7e8;font-weight:600}
-.bowler .scoreline{align-items:center}
-.bowler-name{font-size:21px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bowler-fig{font-size:27px;font-weight:900;white-space:nowrap}
-.bowler-sub{font-size:15px;color:#d3dfec;margin-top:5px}
-#flash{position:absolute;left:50%;bottom:178px;transform:translateX(-50%);background:#ffc83d;color:#07182d;border-radius:9px;padding:13px 35px;font-size:34px;font-weight:900;opacity:0;transition:opacity .2s;white-space:nowrap}
-#flash.show{opacity:1}
-@media(max-width:900px){.lower-third{transform:scale(.5);transform-origin:bottom left;width:1836px}}
-</style>
-</head>
-<body>
-<div id="stage">
-  <div class="lower-third">
-    <section class="panel">
-      <div class="label" id="match">JPL SEASON 8 • MATCH LIVE</div>
-      <div class="scoreline">
-        <div class="teams"><span id="teamA">TEAM A</span><br><span id="teamB" style="color:#b8cce2">vs TEAM B</span></div>
-        <div style="text-align:right"><div class="total"><span id="score">0</span>/<span id="wickets">0</span></div><div class="overs"><span id="overs">0.0</span> OV</div></div>
-      </div>
-    </section>
-    <section class="panel middle">
-      <div class="batter"><div class="label">STRIKER *</div><div class="player" id="striker">BATSMAN 1</div><div class="figures"><span id="sruns">0</span> <small>(<span id="sballs">0</span>)</small></div></div>
-      <div class="batter"><div class="label">NON-STRIKER</div><div class="player" id="nonStriker">BATSMAN 2</div><div class="figures"><span id="nruns">0</span> <small>(<span id="nballs">0</span>)</small></div></div>
-    </section>
-    <section class="panel bowler">
-      <div class="label">BOWLER</div>
-      <div class="scoreline"><div class="bowler-name" id="bowler">BOWLER</div><div class="bowler-fig"><span id="bwickets">0</span>/<span id="bruns">0</span></div></div>
-      <div class="bowler-sub"><span id="bovers">0.0</span> OVERS&nbsp;&nbsp; • &nbsp;&nbsp;ECON <span id="economy">0.00</span></div>
-    </section>
-  </div>
-  <div id="flash"></div>
-</div>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket=io();
-const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE";
-const el=id=>document.getElementById(id);
-const put=(id,value)=>{el(id).textContent=value};
-let previousNote="";
-socket.on("connect",()=>socket.emit("join",room));
-socket.on("state",s=>{
-  put("match",(s.tournament||"JPL SEASON 8")+" • "+(s.match||"MATCH LIVE"));
-  put("teamA",s.teamA||"TEAM A"); put("teamB","vs "+(s.teamB||"TEAM B"));
-  put("score",s.score??0); put("wickets",s.wickets??0);
-  put("overs",(s.overs??0)+"."+((s.balls??0)%6));
-  const st=s.striker||{},ns=s.nonStriker||{},bw=s.bowler||{};
-  put("striker",st.name||"BATSMAN 1"); put("sruns",st.runs??0); put("sballs",st.balls??0);
-  put("nonStriker",ns.name||"BATSMAN 2"); put("nruns",ns.runs??0); put("nballs",ns.balls??0);
-  put("bowler",bw.name||"BOWLER"); put("bwickets",bw.wickets??0); put("bruns",bw.runs??0);
-  const balls=bw.balls??0, ov=Math.floor(balls/6)+"."+balls%6;
-  put("bovers",ov); put("economy",balls?((bw.runs??0)/(balls/6)).toFixed(2):"0.00");
-  if(s.note && s.note!==previousNote){
-    previousNote=s.note; put("flash",s.note); el("flash").classList.add("show");
-    setTimeout(()=>el("flash").classList.remove("show"),3000);
-  }
-});
-</script>
-</body>
-</html>
+.panel{min-height:112px;background:linear-gradient(110deg,rgba(5,18,37,.96),rgba(12,43,72,.94));border:1px solid #ffc83d;border-left:6px solid #ffc83d;border-radius:10px;padding:12px 18px;box-shadow:0 5px 18px #0008}
+.label{font-size:16px;letter-spacing:2px;font-weight:800;color:#ffc83d;text-transform:uppercase;margin-bottom:7px}.scoreline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.teams{font-size:19px;font-weight:800;line-height:1.25}.total{font-size:43px;font-weight:900;white-space:nowrap}.overs{font-size:18px;color:#ffd86b;font-weight:700;white-space:nowrap}
+.middle{display:grid;grid-template-columns:1fr 1fr;gap:10px}.batter{min-width:0}.player{font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.figures{font-size:25px;font-weight:900;margin-top:6px}.figures small{font-size:15px;color:#c8d7e8;font-weight:600}
+.bowler-name{font-size:21px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bowler-fig{font-size:27px;font-weight:900;white-space:nowrap}.bowler-sub{font-size:15px;color:#d3dfec;margin-top:5px}
+#flash{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.7);min-width:560px;text-align:center;padding:30px 60px;border:5px solid white;border-radius:24px;background:linear-gradient(135deg,#041630f5,#0c4470f5);color:white;font-size:112px;line-height:1;font-weight:1000;letter-spacing:5px;text-shadow:0 5px 0 #0005,0 0 24px #ffd23ccc;box-shadow:0 12px 50px #0008;opacity:0;visibility:hidden}
+#flash.show{visibility:visible;animation:pop 3s ease both}#flash.six{border-color:#ffd43b;color:#ffd43b}#flash.four{border-color:#48d7ff;color:#48d7ff}#flash.wicket{border-color:#ff4d59;color:#ff6670}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}20%,82%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
+</style></head><body><div id="stage"><div class="lower-third">
+<section class="panel"><div class="label" id="match">JPL SEASON 8 • MATCH LIVE</div><div class="scoreline"><div class="teams"><span id="teamA">TEAM A</span><br><span id="teamB" style="color:#b8cce2">vs TEAM B</span></div><div style="text-align:right"><div class="total"><span id="score">0</span>/<span id="wickets">0</span></div><div class="overs"><span id="overs">0.0</span> OV</div></div></div></section>
+<section class="panel middle"><div class="batter"><div class="label">STRIKER *</div><div class="player" id="striker">BATSMAN 1</div><div class="figures"><span id="sruns">0</span> <small>(<span id="sballs">0</span>)</small></div></div><div class="batter"><div class="label">NON-STRIKER</div><div class="player" id="nonStriker">BATSMAN 2</div><div class="figures"><span id="nruns">0</span> <small>(<span id="nballs">0</span>)</small></div></div></section>
+<section class="panel"><div class="label">BOWLER</div><div class="scoreline"><div class="bowler-name" id="bowler">BOWLER</div><div class="bowler-fig"><span id="bwickets">0</span>/<span id="bruns">0</span></div></div><div class="bowler-sub"><span id="bovers">0.0</span> OVERS • ECON <span id="economy">0.00</span></div></section></div><div id="flash"></div></div>
+<script src="/socket.io/socket.io.js"></script><script>
+const socket=io(),room=new URLSearchParams(location.search).get("room")||"JPL8LIVE",el=id=>document.getElementById(id),put=(id,v)=>el(id).textContent=v;
+let lastAnnouncementId=null,flashTimer=null;socket.on("connect",()=>socket.emit("join",room));
+function showAnnouncement(a){if(!a||a.id===lastAnnouncementId)return;lastAnnouncementId=a.id;const b=el("flash");b.textContent=a.text||a.type||"";b.className="";b.classList.add(a.type==="SIX"?"six":a.type==="FOUR"?"four":"wicket");void b.offsetWidth;b.classList.add("show");if(flashTimer)clearTimeout(flashTimer);flashTimer=setTimeout(()=>b.classList.remove("show"),3000)}
+socket.on("state",s=>{put("match",(s.tournament||"JPL SEASON 8")+" • "+(s.match||"MATCH LIVE"));put("teamA",s.teamA||"TEAM A");put("teamB","vs "+(s.teamB||"TEAM B"));put("score",s.score??0);put("wickets",s.wickets??0);put("overs",(s.overs??0)+"."+((s.balls??0)%6));const st=s.striker||{},ns=s.nonStriker||{},bw=s.bowler||{};put("striker",st.name||"BATSMAN 1");put("sruns",st.runs??0);put("sballs",st.balls??0);put("nonStriker",ns.name||"BATSMAN 2");put("nruns",ns.runs??0);put("nballs",ns.balls??0);put("bowler",bw.name||"BOWLER");put("bwickets",bw.wickets??0);put("bruns",bw.runs??0);const balls=bw.balls??0;put("bovers",Math.floor(balls/6)+"."+balls%6);put("economy",balls?((bw.runs??0)/(balls/6)).toFixed(2):"0.00");showAnnouncement(s.announcement)});
+</script></body></html>
