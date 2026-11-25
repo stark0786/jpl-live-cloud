@@ -1,3 +1,80 @@
-<!doctype html><html><head><meta charset="utf-8"><title>JPL LIVE Cloud OBS Overlay</title><style>
-*{box-sizing:border-box}html,body{margin:0;background:transparent;overflow:hidden;color:#fff;font-family:Arial}#stage{width:1920px;height:1080px;position:relative}.top{position:absolute;top:38px;left:55px;right:55px;height:150px;background:linear-gradient(100deg,#071b36,#17436e,#071b36);border:3px solid #e8ba35;border-radius:22px;display:flex;align-items:center;padding:25px;box-shadow:0 8px 25px #0008}.brand{width:280px}.brand b{font-size:45px;color:#ffcf3f}.brand small{display:block;letter-spacing:5px}.team{flex:1;text-align:center}.team b{font-size:34px}.team small{display:block;color:#bdd1e8}.score{width:390px;text-align:center;border-left:2px solid #ffffff55;border-right:2px solid #ffffff55}.score b{font-size:68px;color:#ffcf3f}.score small{display:block;font-size:22px}.match{position:absolute;top:205px;left:70px;font-size:20px;text-shadow:0 2px 5px #000}.lower{position:absolute;bottom:48px;left:55px;right:55px;display:flex;gap:16px}.panel{background:#071b36ed;border:2px solid #e8ba35;border-radius:15px;padding:18px 24px;box-shadow:0 5px 20px #0008}.bat{flex:1}.bowl{width:440px}.panel h3{margin:0 0 10px;color:#ffcf3f;letter-spacing:2px}.row{display:flex;justify-content:space-between;font-size:25px;padding:5px 0}.last{font-size:22px;color:#ffcf3f}.note{position:absolute;bottom:255px;left:50%;transform:translateX(-50%);background:#e8ba35;color:#071b36;padding:18px 55px;border-radius:12px;font-size:40px;font-weight:bold;opacity:0;transition:opacity .3s}.show{opacity:1}</style></head><body><div id="stage"><div class="top"><div class="brand"><b>JPL LIVE</b><small>SEASON 8</small></div><div class="team"><b id="a">TEAM A</b><small>BATTING</small></div><div class="score"><b id="score">0/0</b><small><span id="overs">0.0</span> OVERS</small></div><div class="team"><b id="b">TEAM B</b><small>BOWLING</small></div></div><div class="match" id="match">JPL SEASON 8 • MATCH LIVE</div><div class="note" id="note"></div><div class="lower"><div class="panel bat"><h3>BATSMEN AT THE CREASE</h3><div class="row"><span id="sn">BATSMAN 1 *</span><span id="ss">0 (0)</span></div><div class="row"><span id="nn">BATSMAN 2</span><span id="ns">0 (0)</span></div><div class="last">LAST BALLS: <span id="last">—</span></div></div><div class="panel bowl"><h3>BOWLER / TARGET</h3><div class="row"><span id="bn">BOWLER</span><span id="bs">0-0</span></div><div class="row"><span>TARGET</span><span id="target">—</span></div></div></div></div>
-<script src="/socket.io/socket.io.js"></script><script>const socket=io();const p=new URLSearchParams(location.search);const room=p.get("room")||"JPL8LIVE";socket.on("connect",()=>socket.emit("join",room));let old="";socket.on("state",s=>{const set=(id,x)=>document.getElementById(id).textContent=x;set("a",s.teamA);set("b",s.teamB);set("score",s.score+"/"+s.wickets);set("overs",s.overs+"."+(s.balls%6));set("match",s.tournament+" • "+s.match);set("sn",(s.striker?.name||"BATSMAN 1")+" *");set("nn",s.nonStriker?.name||"BATSMAN 2");set("ss",(s.striker?.runs||0)+" ("+(s.striker?.balls||0)+")");set("ns",(s.nonStriker?.runs||0)+" ("+(s.nonStriker?.balls||0)+")");set("bn",s.bowler?.name||"BOWLER");set("bs",(s.bowler?.wickets||0)+"-"+(s.bowler?.runs||0));set("target",s.target||"—");set("last",(s.lastSix||[]).join("  ")||"—");if(s.note&&s.note!==old){old=s.note;const n=document.getElementById("note");n.textContent=s.note;n.classList.add("show");setTimeout(()=>n.classList.remove("show"),3500)}})</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JPL LIVE Lower Third Overlay</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#fff}
+#stage{position:relative;width:1920px;height:1080px;transform-origin:top left}
+.lower-third{position:absolute;left:42px;right:42px;bottom:34px;display:grid;grid-template-columns:440px 1fr 410px;gap:14px;align-items:end}
+.panel{min-height:112px;background:linear-gradient(110deg,rgba(5,18,37,.96),rgba(12,43,72,.94));border:1px solid rgba(255,203,65,.95);border-left:6px solid #ffc83d;border-radius:10px;padding:12px 18px;box-shadow:0 5px 18px rgba(0,0,0,.35)}
+.label{font-size:16px;letter-spacing:2px;font-weight:800;color:#ffc83d;text-transform:uppercase;margin-bottom:7px}
+.scoreline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.teams{font-size:19px;font-weight:800;line-height:1.25}
+.total{font-size:43px;font-weight:900;white-space:nowrap;color:#fff}
+.overs{font-size:18px;color:#ffd86b;font-weight:700;white-space:nowrap}
+.middle{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.batter{min-width:0}
+.player{font-size:20px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.figures{font-size:25px;font-weight:900;margin-top:6px}
+.figures small{font-size:15px;color:#c8d7e8;font-weight:600}
+.bowler .scoreline{align-items:center}
+.bowler-name{font-size:21px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bowler-fig{font-size:27px;font-weight:900;white-space:nowrap}
+.bowler-sub{font-size:15px;color:#d3dfec;margin-top:5px}
+#flash{position:absolute;left:50%;bottom:178px;transform:translateX(-50%);background:#ffc83d;color:#07182d;border-radius:9px;padding:13px 35px;font-size:34px;font-weight:900;opacity:0;transition:opacity .2s;white-space:nowrap}
+#flash.show{opacity:1}
+@media(max-width:900px){.lower-third{transform:scale(.5);transform-origin:bottom left;width:1836px}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="lower-third">
+    <section class="panel">
+      <div class="label" id="match">JPL SEASON 8 • MATCH LIVE</div>
+      <div class="scoreline">
+        <div class="teams"><span id="teamA">TEAM A</span><br><span id="teamB" style="color:#b8cce2">vs TEAM B</span></div>
+        <div style="text-align:right"><div class="total"><span id="score">0</span>/<span id="wickets">0</span></div><div class="overs"><span id="overs">0.0</span> OV</div></div>
+      </div>
+    </section>
+    <section class="panel middle">
+      <div class="batter"><div class="label">STRIKER *</div><div class="player" id="striker">BATSMAN 1</div><div class="figures"><span id="sruns">0</span> <small>(<span id="sballs">0</span>)</small></div></div>
+      <div class="batter"><div class="label">NON-STRIKER</div><div class="player" id="nonStriker">BATSMAN 2</div><div class="figures"><span id="nruns">0</span> <small>(<span id="nballs">0</span>)</small></div></div>
+    </section>
+    <section class="panel bowler">
+      <div class="label">BOWLER</div>
+      <div class="scoreline"><div class="bowler-name" id="bowler">BOWLER</div><div class="bowler-fig"><span id="bwickets">0</span>/<span id="bruns">0</span></div></div>
+      <div class="bowler-sub"><span id="bovers">0.0</span> OVERS&nbsp;&nbsp; • &nbsp;&nbsp;ECON <span id="economy">0.00</span></div>
+    </section>
+  </div>
+  <div id="flash"></div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();
+const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE";
+const el=id=>document.getElementById(id);
+const put=(id,value)=>{el(id).textContent=value};
+let previousNote="";
+socket.on("connect",()=>socket.emit("join",room));
+socket.on("state",s=>{
+  put("match",(s.tournament||"JPL SEASON 8")+" • "+(s.match||"MATCH LIVE"));
+  put("teamA",s.teamA||"TEAM A"); put("teamB","vs "+(s.teamB||"TEAM B"));
+  put("score",s.score??0); put("wickets",s.wickets??0);
+  put("overs",(s.overs??0)+"."+((s.balls??0)%6));
+  const st=s.striker||{},ns=s.nonStriker||{},bw=s.bowler||{};
+  put("striker",st.name||"BATSMAN 1"); put("sruns",st.runs??0); put("sballs",st.balls??0);
+  put("nonStriker",ns.name||"BATSMAN 2"); put("nruns",ns.runs??0); put("nballs",ns.balls??0);
+  put("bowler",bw.name||"BOWLER"); put("bwickets",bw.wickets??0); put("bruns",bw.runs??0);
+  const balls=bw.balls??0, ov=Math.floor(balls/6)+"."+balls%6;
+  put("bovers",ov); put("economy",balls?((bw.runs??0)/(balls/6)).toFixed(2):"0.00");
+  if(s.note && s.note!==previousNote){
+    previousNote=s.note; put("flash",s.note); el("flash").classList.add("show");
+    setTimeout(()=>el("flash").classList.remove("show"),3000);
+  }
+});
+</script>
+</body>
+</html>
