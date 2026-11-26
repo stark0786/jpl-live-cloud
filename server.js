@@ -15,7 +15,7 @@ const blank = () => ({
   tournament: "JPL", match: "Match 01", tournamentLogo: "", teamA: "Team A", teamB: "Team B",
   logoA: "", logoB: "", battingTeam: "A", totalOvers: 20, target: 0,
   score: 0, wickets: 0, balls: 0, striker: "", nonStriker: "", bowler: "",
-  squads: { A: [], B: [] }, battingStats: [], bowlingStats: [], extras: { wd: 0, nb: 0, b: 0, lb: 0 },
+  squads: { A: [], B: [] }, playingXI: { A: [], B: [] }, overlayAction: 0, overlayMode: "show", battingStats: [], bowlingStats: [], extras: { wd: 0, nb: 0, b: 0, lb: 0 },
   fallOfWickets: [], oversLog: [], currentOver: [], history: [], announcement: "", announcementType: "",
   scorecardMode: "batting", scorecardVisible: false, inningsComplete: false
 });
@@ -130,7 +130,7 @@ io.on("connection", socket => {
   socket.on("join", room => { room = String(room || ROOM_DEFAULT); socket.join(room); socket.data.room = room; socket.emit("state", getState(room)); });
   socket.on("update", data => {
     const room = socket.data.room || ROOM_DEFAULT, s = getState(room);
-    const allowed = ["tournament","match","tournamentLogo","teamA","teamB","logoA","logoB","battingTeam","totalOvers","target","striker","nonStriker","bowler","squads"];
+    const allowed = ["tournament","match","tournamentLogo","teamA","teamB","logoA","logoB","battingTeam","totalOvers","target","striker","nonStriker","bowler","squads","playingXI"];
     for (const k of allowed) if (data && data[k] !== undefined) s[k] = data[k];
     emit(room);
   });
@@ -138,6 +138,7 @@ io.on("connection", socket => {
   socket.on("event", e => { const room = socket.data.room || ROOM_DEFAULT, s = getState(room); if (e === "W") applyBall(s,{type:"wicket"}); else if (["0","1","2","3","4","6"].includes(String(e))) applyBall(s,{type:"run",runs:Number(e)}); else if (e==="WD") applyBall(s,{type:"wide"}); else if (e==="NB") applyBall(s,{type:"noball"}); emit(room); });
   socket.on("swap", () => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); swap(s); emit(room); });
   socket.on("undo", () => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); const prev=s.history.pop(); if(prev && prev.full){ const h=s.history; Object.keys(s).forEach(k=>delete s[k]); Object.assign(s,prev.full); s.history=h; } emit(room); });
+  socket.on("broadcastMode", mode => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); s.overlayMode=mode==="hide"?"hide":"show"; s.overlayAction=(s.overlayAction||0)+1; emit(room); });
   socket.on("showScorecard", mode => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); s.scorecardMode=mode==="bowling"?"bowling":"batting"; s.scorecardVisible=true; emit(room); });
   socket.on("hideScorecard", () => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); s.scorecardVisible=false; emit(room); });
   socket.on("announce", a => { const room=socket.data.room||ROOM_DEFAULT,s=getState(room); s.announcement=String(a.text||""); s.announcementType=String(a.type||""); emit(room); });
