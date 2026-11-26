@@ -1,47 +1,37 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JPL LIVE Pro Broadcast Overlay</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/socket.io/socket.io.js"></script><title>JPL LIVE Overlay</title>
 <style>
-:root{--gold:#f7c948;--cyan:#36d6ff;--navy:#061329;--blue:#102f61;--white:#f7fbff}
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:var(--white)}
-#stage{position:relative;width:1920px;height:1080px;transform-origin:top left}
-.lower-third{position:absolute;left:42px;right:42px;bottom:34px;display:grid;grid-template-columns:440px 1fr 410px;gap:13px;align-items:stretch}
-.panel{position:relative;min-height:116px;padding:13px 18px 12px;background:linear-gradient(115deg,rgba(4,13,31,.97) 0%,rgba(9,35,76,.97) 55%,rgba(13,54,103,.96) 100%);border:1px solid rgba(91,185,255,.65);border-top:3px solid var(--gold);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden}
-.panel:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(180deg,var(--gold),#e78d22)}
-.panel:after{content:"";position:absolute;right:-38px;top:-42px;width:130px;height:130px;border:1px solid rgba(54,214,255,.15);transform:rotate(35deg)}
-.label{position:relative;z-index:1;font-size:14px;letter-spacing:2.2px;font-weight:900;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
-.scoreline{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.teams{font-size:19px;font-weight:900;line-height:1.3;text-transform:uppercase;text-shadow:0 2px 5px #000}
-.total{font-size:43px;line-height:1;font-weight:1000;white-space:nowrap;letter-spacing:-1px;text-shadow:0 2px 8px #0008}
-.overs{font-size:16px;color:var(--cyan);font-weight:900;white-space:nowrap;margin-top:5px;text-align:right;letter-spacing:1px}
-.middle{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-left:21px;padding-right:21px}
-.batter{position:relative;z-index:1;min-width:0;padding-left:11px;border-left:2px solid rgba(54,214,255,.5)}
-.player{font-size:20px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
-.figures{font-size:26px;font-weight:1000;margin-top:7px;color:#fff}
-.figures small{font-size:14px;color:#a9c9e9;font-weight:700}
-.bowler-name{font-size:20px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
-.bowler-fig{font-size:27px;font-weight:1000;white-space:nowrap;color:var(--white)}
-.bowler-sub{font-size:14px;color:#9dc7ec;margin-top:6px;font-weight:700;letter-spacing:.5px}
-#flash{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.7);min-width:570px;text-align:center;padding:28px 58px;border:3px solid #fff;border-radius:15px;background:linear-gradient(120deg,rgba(3,13,32,.98),rgba(12,48,99,.98));color:#fff;font-size:112px;line-height:1;font-weight:1000;letter-spacing:5px;text-shadow:0 3px 0 rgba(0,0,0,.3),0 0 22px currentColor;box-shadow:0 16px 55px rgba(0,0,0,.6),inset 0 0 35px rgba(255,255,255,.07);opacity:0;visibility:hidden}
-#flash:before{content:"JPL • SEASON 8";display:block;font-size:16px;letter-spacing:5px;margin-bottom:12px;color:#fff;opacity:.8}
-#flash.show{visibility:visible;animation:pop 3s ease both}
-#flash.six{border-color:var(--gold);color:var(--gold);background:linear-gradient(120deg,rgba(33,22,2,.98),rgba(102,57,4,.98))}
-#flash.four{border-color:var(--cyan);color:var(--cyan);background:linear-gradient(120deg,rgba(2,19,42,.98),rgba(4,69,104,.98))}
-#flash.wicket{border-color:#ff5364;color:#ff6574;background:linear-gradient(120deg,rgba(38,3,16,.98),rgba(107,10,28,.98))}
-@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}20%,82%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
-</style></head>
-<body><div id="stage">
-<div class="lower-third">
-<section class="panel"><div class="label" id="match">JPL SEASON 8 • MATCH LIVE</div><div class="scoreline"><div class="teams"><span id="teamA">TEAM A</span><br><span id="teamB" style="color:#9dc7ec">vs TEAM B</span></div><div style="text-align:right"><div class="total"><span id="score">0</span>/<span id="wickets">0</span></div><div class="overs"><span id="overs">0.0</span> OVERS</div></div></div></section>
-<section class="panel middle"><div class="batter"><div class="label">STRIKER *</div><div class="player" id="striker">BATSMAN 1</div><div class="figures"><span id="sruns">0</span> <small>(<span id="sballs">0</span>)</small></div></div><div class="batter"><div class="label">NON-STRIKER</div><div class="player" id="nonStriker">BATSMAN 2</div><div class="figures"><span id="nruns">0</span> <small>(<span id="nballs">0</span>)</small></div></div></section>
-<section class="panel"><div class="label">BOWLER</div><div class="scoreline"><div class="bowler-name" id="bowler">BOWLER</div><div class="bowler-fig"><span id="bwickets">0</span>/<span id="bruns">0</span></div></div><div class="bowler-sub"><span id="bovers">0.0</span> OVERS&nbsp;&nbsp; • &nbsp;&nbsp;ECON <span id="economy">0.00</span></div></section>
-</div><div id="flash"></div></div>
-<script src="/socket.io/socket.io.js"></script><script>
-const socket=io(),room=new URLSearchParams(location.search).get("room")||"JPL8LIVE",el=id=>document.getElementById(id),put=(id,v)=>el(id).textContent=v;
-let lastAnnouncementId=null,flashTimer=null;socket.on("connect",()=>socket.emit("join",room));
-function showAnnouncement(a){if(!a||a.id===lastAnnouncementId)return;lastAnnouncementId=a.id;const b=el("flash");b.textContent=a.text||a.type||"";b.className="";b.classList.add(a.type==="SIX"?"six":a.type==="FOUR"?"four":"wicket");void b.offsetWidth;b.classList.add("show");if(flashTimer)clearTimeout(flashTimer);flashTimer=setTimeout(()=>b.classList.remove("show"),3000)}
-socket.on("state",s=>{put("match",(s.tournament||"JPL SEASON 8")+" • "+(s.match||"MATCH LIVE"));put("teamA",s.teamA||"TEAM A");put("teamB","vs "+(s.teamB||"TEAM B"));put("score",s.score??0);put("wickets",s.wickets??0);put("overs",(s.overs??0)+"."+((s.balls??0)%6));const st=s.striker||{},ns=s.nonStriker||{},bw=s.bowler||{};put("striker",st.name||"BATSMAN 1");put("sruns",st.runs??0);put("sballs",st.balls??0);put("nonStriker",ns.name||"BATSMAN 2");put("nruns",ns.runs??0);put("nballs",ns.balls??0);put("bowler",bw.name||"BOWLER");put("bwickets",bw.wickets??0);put("bruns",bw.runs??0);const balls=bw.balls??0;put("bovers",Math.floor(balls/6)+"."+balls%6);put("economy",balls?((bw.runs??0)/(balls/6)).toFixed(2):"0.00");showAnnouncement(s.announcement)});
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
+#bar{position:absolute;top:2.5%;left:2%;width:96%;min-height:100px;display:grid;grid-template-columns:1.18fr 1.45fr .72fr 1.15fr 1.45fr;align-items:stretch;border:2px solid #e7b84b;border-radius:12px;overflow:hidden;background:linear-gradient(100deg,#071d48 0%,#075e9c 34%,#a71935 67%,#420c20 100%);box-shadow:0 6px 22px #0009}
+.cell{padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:9px;border-right:1px solid #ffffff35;min-width:0}.team{background:#061a3bd9}.logo{width:47px;height:47px;object-fit:contain}.name{font-size:clamp(13px,1.35vw,23px);font-weight:800;text-transform:uppercase;white-space:nowrap}.score{font-size:clamp(23px,2.5vw,38px);font-weight:900;color:#ffe08a;white-space:nowrap}.sub{font-size:clamp(11px,1vw,16px);color:#dceaff}.batters,.bowler{display:block;text-align:left}.player{font-size:clamp(12px,1.15vw,18px);font-weight:700;white-space:nowrap}.target{background:#bb1f35;flex-direction:column;text-align:center}.target strong{font-size:clamp(17px,1.7vw,27px);color:#fff}.target span{font-size:clamp(10px,1vw,15px)}.versus{background:#101a32;flex-direction:column}.versus b{font-size:22px;color:#ffd66e}.tournament{position:absolute;top:0;left:2.5%;font-size:15px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;background:#b21e38;padding:5px 13px;border-radius:0 0 8px 8px;letter-spacing:1px}
+#popup{position:absolute;top:43%;left:50%;transform:translate(-50%,-50%) scale(.5);font-size:clamp(60px,10vw,150px);font-weight:1000;color:#fff;text-shadow:0 5px 0 #8a1727,0 10px 25px #000;opacity:0;pointer-events:none;white-space:nowrap}
+#popup.show{animation:pop 3s ease forwards}@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}28%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
+#card{display:none;position:absolute;left:8%;top:18%;width:84%;max-height:70%;overflow:hidden;background:#071a34f2;border:2px solid #e6b94f;border-radius:14px;padding:18px;box-shadow:0 8px 35px #000b}
+#card h2{text-align:center;margin:0 0 12px;color:#ffd56a}table{width:100%;border-collapse:collapse;font-size:clamp(12px,1.2vw,18px)}th{background:#a51e39;color:white}td,th{padding:7px 8px;border-bottom:1px solid #ffffff30;text-align:right}td:first-child,th:first-child{text-align:left}.tag{color:#ffd56a}
+@media(max-width:800px){#bar{grid-template-columns:1.1fr 1.25fr .6fr 1fr 1.25fr;min-height:75px}.cell{padding:5px}.logo{width:30px;height:30px}.tournament{font-size:10px}#card{left:3%;width:94%;top:16%}}
+</style></head><body>
+<div class="tournament" id="tour">JPL</div><div id="bar">
+<div class="cell team"><img id="batLogo" class="logo"><div><div class="name" id="batTeam">TEAM A</div><div class="score" id="score">0/0</div><div class="sub" id="overs">0.0 / 20 OV</div></div></div>
+<div class="cell batters"><div class="player" id="p1">Striker  0 (0)</div><div class="player" id="p2">Non-striker  0 (0)</div></div>
+<div class="cell target"><strong id="target">TARGET</strong><span id="targetSub">—</span></div>
+<div class="cell versus"><b>VS</b><img id="bowlLogo" class="logo"><div class="name" id="bowlTeam">TEAM B</div></div>
+<div class="cell bowler"><div><div class="player" id="bowler">Bowler</div><div class="sub" id="bowlFigures">0.0 - 0 - 0 • ECO 0.00</div></div></div></div>
+<div id="popup"></div><div id="card"><h2 id="cardTitle">BATTING SCORECARD</h2><div id="cardBody"></div></div>
+<script>
+const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE",socket=io();socket.emit("join",room);let lastAnn="",timer=null;
+function safe(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function img(id,src){let el=document.getElementById(id);el.src=src||"";el.style.visibility=src?"visible":"hidden"}
+function render(s){let battingA=s.battingTeam!=="B",bat=battingA?s.teamA:s.teamB,bowl=battingA?s.teamB:s.teamA,batLogo=battingA?s.logoA:s.logoB,bowlLogo=battingA?s.logoB:s.logoA;
+document.getElementById("tour").textContent=s.tournament||"LIVE";document.getElementById("batTeam").textContent=bat||"BAT";document.getElementById("bowlTeam").textContent=bowl||"BOWL";img("batLogo",batLogo);img("bowlLogo",bowlLogo);
+document.getElementById("score").textContent=`${s.score}/${s.wickets}`;document.getElementById("overs").textContent=`${Math.floor(s.balls/6)}.${s.balls%6} / ${s.totalOvers} OV`;
+let bs=s.battingStats||[],p1=bs.find(x=>x.name===s.striker),p2=bs.find(x=>x.name===s.nonStriker);document.getElementById("p1").textContent=`▶ ${s.striker||"Striker"}  ${p1?p1.runs:0} (${p1?p1.balls:0})`;document.getElementById("p2").textContent=`${s.nonStriker||"Non-striker"}  ${p2?p2.runs:0} (${p2?p2.balls:0})`;
+document.getElementById("target").textContent=s.target?`TARGET ${s.target}`:"1ST INNINGS";document.getElementById("targetSub").textContent=s.target?`Need ${Math.max(0,s.target-s.score)} runs`:"LIVE SCORE";
+let bw=(s.bowlingStats||[]).find(x=>x.name===s.bowler);document.getElementById("bowler").textContent=s.bowler||"Bowler";let o=bw?`${Math.floor(bw.balls/6)}.${bw.balls%6}`:"0.0",eco=bw&&bw.balls?(bw.runs/(bw.balls/6)).toFixed(2):"0.00";document.getElementById("bowlFigures").textContent=`${o} - ${bw?bw.runs:0} - ${bw?bw.wickets:0} • ECO ${eco}`;
+if(s.announcement && s.announcement!==lastAnn){lastAnn=s.announcement;showPopup(s.announcement,s.announcementType)}else if(!s.announcement)lastAnn="";
+const card=document.getElementById("card");if(s.scorecardVisible){card.style.display="block";renderCard(s)}else card.style.display="none"}
+function showPopup(t,type){let p=document.getElementById("popup");p.textContent=t;p.className="show";clearTimeout(timer);timer=setTimeout(()=>p.className="",3000)}
+function renderCard(s){let mode=s.scorecardMode==="bowling"?"bowling":"batting";document.getElementById("cardTitle").textContent=mode==="batting"?"BATTING SCORECARD":"BOWLING SCORECARD";let rows=mode==="batting"?(s.battingStats||[]).map(p=>`<tr><td>${safe(p.name)}<br><small class="tag">${safe(p.dismissal||"not out")}</small></td><td>${p.runs}</td><td>${p.balls}</td><td>${p.fours}</td><td>${p.sixes}</td><td>${p.balls?(p.runs*100/p.balls).toFixed(1):"0.0"}</td></tr>`).join(""):(s.bowlingStats||[]).map(p=>`<tr><td>${safe(p.name)}</td><td>${Math.floor(p.balls/6)}.${p.balls%6}</td><td>${p.maidens}</td><td>${p.runs}</td><td>${p.wickets}</td><td>${p.balls?(p.runs/(p.balls/6)).toFixed(2):"0.00"}</td></tr>`).join("");
+let head=mode==="batting"?"<tr><th>Batter / Dismissal</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>":"<tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>ECO</th></tr>";
+let extra=mode==="batting"?`<p>Extras: ${s.extras.wd+s.extras.nb+s.extras.b+s.extras.lb} (Wd ${s.extras.wd}, Nb ${s.extras.nb}, B ${s.extras.b}, Lb ${s.extras.lb}) • Total ${s.score}/${s.wickets}</p><p>Fall of wickets: ${(s.fallOfWickets||[]).map(x=>`${x.score}-${x.wicket} (${safe(x.batter)}, ${x.over})`).join(" • ")}</p>`:"";
+document.getElementById("cardBody").innerHTML=`<table>${head}${rows}</table>${extra}<p class="tag">Overs: ${(s.oversLog||[]).map(o=>o.over+": "+o.balls.join(",")).join(" | ")} ${(s.currentOver||[]).length?" | "+(s.oversLog.length+1)+": "+s.currentOver.join(","):""}</p>`}
+socket.on("state",render);
 </script></body></html>
