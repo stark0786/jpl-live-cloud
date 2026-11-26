@@ -6,7 +6,7 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: "*" }, maxHttpBufferSize: 8e6 });
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", (_, res) => res.json({ ok: true, app: "JPL LIVE" }));
 
