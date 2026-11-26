@@ -1,38 +1,90 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/socket.io/socket.io.js"></script><title>JPL LIVE Overlay</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
-#bar{position:absolute;top:auto;bottom:2.5%;left:2%;width:96%;min-height:100px;display:grid;grid-template-columns:1.18fr 1.45fr .72fr 1.15fr 1.45fr;align-items:stretch;border:2px solid #e7b84b;border-radius:12px;overflow:hidden;background:linear-gradient(100deg,#071d48 0%,#075e9c 34%,#a71935 67%,#420c20 100%);box-shadow:0 6px 22px #0009}
-.cell{padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:9px;border-right:1px solid #ffffff35;min-width:0}.team{background:#061a3bd9}.logo{width:47px;height:47px;object-fit:contain}.name{font-size:clamp(13px,1.35vw,23px);font-weight:800;text-transform:uppercase;white-space:nowrap}.score{font-size:clamp(23px,2.5vw,38px);font-weight:900;color:#ffe08a;white-space:nowrap}.sub{font-size:clamp(11px,1vw,16px);color:#dceaff}.batters,.bowler{display:block;text-align:left}.player{font-size:clamp(12px,1.15vw,18px);font-weight:700;white-space:nowrap}.target{background:#bb1f35;flex-direction:column;text-align:center}.target strong{font-size:clamp(17px,1.7vw,27px);color:#fff}.target span{font-size:clamp(10px,1vw,15px)}.versus{background:#101a32;flex-direction:column}.versus b{font-size:22px;color:#ffd66e}.tournament{position:absolute;top:0;left:2.5%;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;background:#b21e38;padding:5px 13px;border-radius:0 0 8px 8px;letter-spacing:1px}
+#bar{position:absolute;top:auto;bottom:2.5%;left:50%;transform:translateX(-50%);width:88%;min-height:142px;display:grid;grid-template-columns:1.18fr 1.55fr .82fr 1.18fr 1.42fr;align-items:stretch;border:2px solid #e7b84b;border-radius:15px;overflow:hidden;background:linear-gradient(100deg,#071d48 0%,#075e9c 34%,#a71935 67%,#420c20 100%);box-shadow:0 8px 28px #000b}
+.cell{padding:14px 15px;display:flex;align-items:center;justify-content:center;gap:11px;border-right:1px solid #ffffff35;min-width:0;overflow:hidden}.team{background:#061a3be8}.team>div{min-width:0;max-width:calc(100% - 58px);flex:1}.logo{width:54px;height:54px;object-fit:contain;flex:0 0 auto}.name{display:block;width:100%;font-size:clamp(16px,1.55vw,27px);font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-align:center;line-height:1.15}.score{font-size:clamp(28px,2.8vw,44px);font-weight:1000;color:#ffe08a;white-space:nowrap;text-align:center;line-height:1.12}.sub{font-size:clamp(13px,1.05vw,18px);color:#dceaff;text-align:center;white-space:nowrap}.batters,.bowler{display:flex;flex-direction:column;justify-content:center;gap:10px;text-align:left}.player{display:block;width:100%;font-size:clamp(15px,1.35vw,22px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.25}.target{background:#bb1f35;flex-direction:column;text-align:center}.target strong{font-size:clamp(20px,1.9vw,31px);color:#fff}.target span{font-size:clamp(12px,1.05vw,17px)}.versus{background:#101a32;flex-direction:column;gap:7px}.versus b{font-size:26px;color:#ffd66e}.tournament{position:absolute;top:0;left:6%;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;background:#b21e38;padding:5px 13px;border-radius:0 0 8px 8px;letter-spacing:1px}
 #popup{position:absolute;top:43%;left:50%;transform:translate(-50%,-50%) scale(.5);font-size:clamp(60px,10vw,150px);font-weight:1000;color:#fff;text-shadow:0 5px 0 #8a1727,0 10px 25px #000;opacity:0;pointer-events:none;white-space:nowrap}
 #popup.show{animation:pop 3s ease forwards}@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}28%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
-#card{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(86%,1500px);max-height:78%;overflow:auto;background:linear-gradient(145deg,#071a34f7,#102d52f7);border:3px solid #e6b94f;border-radius:20px;padding:26px 32px;box-shadow:0 12px 55px #000d;z-index:8}#card.visible{display:block;animation:cardIn .45s ease both}#card h2{font-size:clamp(25px,3vw,48px);letter-spacing:2px}#card table{font-size:clamp(17px,1.65vw,27px)}#card td,#card th{padding:12px 14px}#intro{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:22px;background:radial-gradient(circle,#173d69ef,#020817f5);z-index:10;text-align:center}#intro.show{display:flex;animation:introIn .45s ease both}#intro img{max-width:38vw;max-height:45vh;object-fit:contain;filter:drop-shadow(0 0 25px #ffd56a);animation:logoPulse 1.6s ease-in-out infinite alternate}#intro strong{font-size:clamp(36px,6vw,90px);color:#ffe08a;text-shadow:0 4px 18px #000}#bar{transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .5s}#bar.off{transform:translateY(180%);opacity:0}@keyframes cardIn{from{opacity:0;transform:translate(-50%,-46%) scale(.94)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}@keyframes introIn{from{opacity:0}to{opacity:1}}@keyframes logoPulse{from{transform:scale(.94)}to{transform:scale(1.05)}}
+#card{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(86%,1500px);max-height:78%;overflow:auto;background:linear-gradient(145deg,#071a34f7,#102d52f7);border:3px solid #e6b94f;border-radius:20px;padding:26px 32px;box-shadow:0 12px 55px #000d;z-index:8}#card.visible{display:block;animation:cardIn .45s ease both}#card h2{font-size:clamp(25px,3vw,48px);letter-spacing:2px}#card table{font-size:clamp(17px,1.65vw,27px)}#card td,#card th{padding:12px 14px}#intro{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:22px;background:radial-gradient(circle,#173d69ef,#020817f5);z-index:10;text-align:center}#intro.show{display:flex;animation:introIn .45s ease both}#intro img{max-width:38vw;max-height:45vh;object-fit:contain;filter:drop-shadow(0 0 25px #ffd56a);animation:logoPulse 1.6s ease-in-out infinite alternate}#intro strong{font-size:clamp(36px,6vw,90px);color:#ffe08a;text-shadow:0 4px 18px #000}#bar{transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .5s}#bar.off{transform:translate(-50%,180%);opacity:0}@keyframes cardIn{from{opacity:0;transform:translate(-50%,-46%) scale(.94)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}@keyframes introIn{from{opacity:0}to{opacity:1}}@keyframes logoPulse{from{transform:scale(.94)}to{transform:scale(1.05)}}
 #card h2{text-align:center;margin:0 0 12px;color:#ffd56a}table{width:100%;border-collapse:collapse;font-size:clamp(12px,1.2vw,18px)}th{background:#a51e39;color:white}td,th{padding:7px 8px;border-bottom:1px solid #ffffff30;text-align:right}td:first-child,th:first-child{text-align:left}.tag{color:#ffd56a}
-@media(max-width:800px){#bar{grid-template-columns:1.1fr 1.25fr .6fr 1fr 1.25fr;min-height:75px}.cell{padding:5px}.logo{width:30px;height:30px}.tournament{font-size:10px}#card{left:3%;width:94%;top:16%}}
-.tournament img{width:42px;height:42px;object-fit:contain;display:none} </style></head><body>
+@media(max-width:800px){#bar{width:96%;grid-template-columns:1.05fr 1.3fr .62fr 1.05fr 1.2fr;min-height:92px}.cell{padding:6px;gap:5px}.logo{width:32px;height:32px}.name{font-size:clamp(10px,2vw,16px)}.score{font-size:clamp(18px,3vw,26px)}.player{font-size:clamp(10px,1.8vw,15px)}.sub{font-size:clamp(9px,1.5vw,12px)}.tournament{font-size:10px}#card{left:3%;width:94%;top:16%}}
+.tournament img{width:42px;height:42px;object-fit:contain;display:none} 
+#customLayer{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:22px;background:linear-gradient(135deg,#06152eeF,#143d6bee);z-index:20;text-align:center;padding:4%}
+#customLayer.visible{display:flex;animation:cardIn .25s ease both}
+#customLayer h1{font-size:clamp(38px,6vw,88px);margin:0;color:#fff;text-shadow:0 4px 18px #000}
+#customLayer img{max-width:34vw;max-height:48vh;object-fit:contain;filter:drop-shadow(0 8px 20px #000)}
+#nextTeams{display:flex;align-items:center;justify-content:center;gap:5vw;width:100%}
+#nextTeams .nextSide{display:flex;align-items:center;flex-direction:column;gap:16px;font-size:clamp(28px,4vw,58px);font-weight:900;text-shadow:0 4px 15px #000}
+#nextTeams img{width:min(18vw,220px);height:min(18vw,220px);object-fit:contain}
+#nextTeams b{font-size:clamp(42px,7vw,100px);color:#ffd56a}
+#nextDetails{font-size:clamp(22px,3vw,42px);color:#ffd56a;font-weight:900}
+</style></head><body>
 <div id="intro"><img id="introLogo"><strong id="introName">JPL</strong></div><div class="tournament" id="tour"><img id="tourLogo" alt="Tournament logo"><span id="tourName">JPL</span></div><div id="bar">
 <div class="cell team"><img id="batLogo" class="logo"><div><div class="name" id="batTeam">TEAM A</div><div class="score" id="score">0/0</div><div class="sub" id="overs">0.0 / 20 OV</div></div></div>
 <div class="cell batters"><div class="player" id="p1">Striker  0 (0)</div><div class="player" id="p2">Non-striker  0 (0)</div></div>
 <div class="cell target"><strong id="target">TARGET</strong><span id="targetSub">—</span></div>
 <div class="cell versus"><b>VS</b><img id="bowlLogo" class="logo"><div class="name" id="bowlTeam">TEAM B</div></div>
 <div class="cell bowler"><div><div class="player" id="bowler">Bowler</div><div class="sub" id="bowlFigures">0.0 - 0 - 0 • ECO 0.00</div></div></div></div>
-<div id="popup"></div><div id="card"><h2 id="cardTitle">BATTING SCORECARD</h2><div id="cardBody"></div></div>
+<div id="popup"></div><div id="customLayer"><div id="nextDetails"></div><div id="nextTeams"><div class="nextSide"><img id="nextLogoA"><span id="nextNameA"></span></div><b id="nextVS">VS</b><div class="nextSide"><img id="nextLogoB"><span id="nextNameB"></span></div></div><h1 id="customHeading"></h1><img id="customPic"></div><div id="card"><h2 id="cardTitle">BATTING SCORECARD</h2><div id="cardBody"></div></div>
 <script>
 const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE",socket=io();socket.emit("join",room);let lastAnn="",timer=null,lastAction=0,modeTimer=null;
 function safe(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function img(id,src){let el=document.getElementById(id);el.src=src||"";el.style.visibility=src?"visible":"hidden"}
-function render(s){let battingA=s.battingTeam!=="B",bat=battingA?s.teamA:s.teamB,bowl=battingA?s.teamB:s.teamA,batLogo=battingA?s.logoA:s.logoB,bowlLogo=battingA?s.logoB:s.logoA;
+function fitLabel(el,min=11,max=27){if(!el)return;const parent=el.parentElement;const available=Math.max(20,parent.clientWidth-4);let size=max;el.style.fontSize=size+"px";while(size>min&&el.scrollWidth>available){size-=1;el.style.fontSize=size+"px"}}
+function fitAllLabels(){document.querySelectorAll(".name").forEach(el=>fitLabel(el,11,27));document.querySelectorAll(".player").forEach(el=>fitLabel(el,11,23))}
+function renderScore(s){let battingA=s.battingTeam!=="B",bat=battingA?s.teamA:s.teamB,bowl=battingA?s.teamB:s.teamA,batLogo=battingA?s.logoA:s.logoB,bowlLogo=battingA?s.logoB:s.logoA;
 document.getElementById("tourName").textContent=s.tournament||"LIVE";let tl=document.getElementById("tourLogo");tl.src=s.tournamentLogo||"";tl.style.display=s.tournamentLogo?"block":"none";if(s.overlayAction&&s.overlayAction!==lastAction){lastAction=s.overlayAction;playBroadcast(s.overlayMode,s)}document.getElementById("batTeam").textContent=bat||"BAT";document.getElementById("bowlTeam").textContent=bowl||"BOWL";img("batLogo",batLogo);img("bowlLogo",bowlLogo);
 document.getElementById("score").textContent=`${s.score}/${s.wickets}`;document.getElementById("overs").textContent=`${Math.floor(s.balls/6)}.${s.balls%6} / ${s.totalOvers} OV`;
 let bs=s.battingStats||[],p1=bs.find(x=>x.name===s.striker),p2=bs.find(x=>x.name===s.nonStriker);document.getElementById("p1").textContent=`▶ ${s.striker||"Striker"}  ${p1?p1.runs:0} (${p1?p1.balls:0})`;document.getElementById("p2").textContent=`${s.nonStriker||"Non-striker"}  ${p2?p2.runs:0} (${p2?p2.balls:0})`;
 document.getElementById("target").textContent=s.target?`TARGET ${s.target}`:"1ST INNINGS";document.getElementById("targetSub").textContent=s.target?`Need ${Math.max(0,s.target-s.score)} runs`:"LIVE SCORE";
 let bw=(s.bowlingStats||[]).find(x=>x.name===s.bowler);document.getElementById("bowler").textContent=s.bowler||"Bowler";let o=bw?`${Math.floor(bw.balls/6)}.${bw.balls%6}`:"0.0",eco=bw&&bw.balls?(bw.runs/(bw.balls/6)).toFixed(2):"0.00";document.getElementById("bowlFigures").textContent=`${o} - ${bw?bw.runs:0} - ${bw?bw.wickets:0} • ECO ${eco}`;
 if(s.announcement && s.announcement!==lastAnn){lastAnn=s.announcement;showPopup(s.announcement,s.announcementType)}else if(!s.announcement)lastAnn="";
-const card=document.getElementById("card");if(s.scorecardVisible){card.classList.add("visible");renderCard(s)}else card.classList.remove("visible")}
+const card=document.getElementById("card");if(s.scorecardVisible){card.classList.add("visible");renderCard(s)}else card.classList.remove("visible");requestAnimationFrame(fitAllLabels)}
 function playBroadcast(mode,s){let bar=document.getElementById("bar"),intro=document.getElementById("intro");clearTimeout(modeTimer);document.getElementById("introName").textContent=s.tournament||"LIVE";let logo=document.getElementById("introLogo");logo.src=s.tournamentLogo||"";logo.style.display=s.tournamentLogo?"block":"none";if(mode==="hide"){bar.classList.add("off");intro.classList.add("show");modeTimer=setTimeout(()=>intro.classList.remove("show"),2400)}else{intro.classList.add("show");bar.classList.add("off");modeTimer=setTimeout(()=>{intro.classList.remove("show");bar.classList.remove("off")},1800)}}
 function showPopup(t,type){let p=document.getElementById("popup");p.textContent=t;p.className="show";clearTimeout(timer);timer=setTimeout(()=>p.className="",3000)}
 function renderCard(s){let mode=s.scorecardMode==="bowling"?"bowling":"batting";document.getElementById("cardTitle").textContent=mode==="batting"?"BATTING SCORECARD":"BOWLING SCORECARD";let rows=mode==="batting"?(s.battingStats||[]).map(p=>`<tr><td>${safe(p.name)}<br><small class="tag">${safe(p.dismissal||"not out")}</small></td><td>${p.runs}</td><td>${p.balls}</td><td>${p.fours}</td><td>${p.sixes}</td><td>${p.balls?(p.runs*100/p.balls).toFixed(1):"0.0"}</td></tr>`).join(""):(s.bowlingStats||[]).map(p=>`<tr><td>${safe(p.name)}</td><td>${Math.floor(p.balls/6)}.${p.balls%6}</td><td>${p.maidens}</td><td>${p.runs}</td><td>${p.wickets}</td><td>${p.balls?(p.runs/(p.balls/6)).toFixed(2):"0.00"}</td></tr>`).join("");
 let head=mode==="batting"?"<tr><th>Batter / Dismissal</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>":"<tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>ECO</th></tr>";
 let extra=mode==="batting"?`<p>Extras: ${s.extras.wd+s.extras.nb+s.extras.b+s.extras.lb} (Wd ${s.extras.wd}, Nb ${s.extras.nb}, B ${s.extras.b}, Lb ${s.extras.lb}) • Total ${s.score}/${s.wickets}</p><p>Fall of wickets: ${(s.fallOfWickets||[]).map(x=>`${x.score}-${x.wicket} (${safe(x.batter)}, ${x.over})`).join(" • ")}</p>`:"";
 document.getElementById("cardBody").innerHTML=`<table>${head}${rows}</table>${extra}<p class="tag">Overs: ${(s.oversLog||[]).map(o=>o.over+": "+o.balls.join(",")).join(" | ")} ${(s.currentOver||[]).length?" | "+(s.oversLog.length+1)+": "+s.currentOver.join(","):""}</p>`}
-socket.on("state",render);
+
+let lastCustomKey="",customTimer=null;
+function applyDisplay(s){
+ const d=s.displaySettings||{},root=document.documentElement;
+ if(d.fontScore)root.style.setProperty("--font-score",d.fontScore+"px");
+ if(d.fontTeam)root.style.setProperty("--font-team",d.fontTeam+"px");
+ if(d.fontPlayer)root.style.setProperty("--font-player",d.fontPlayer+"px");
+ if(d.fontMeta)root.style.setProperty("--font-meta",d.fontMeta+"px");
+ if(d.colourBar)document.getElementById("bar").style.background=d.colourBar;
+ if(d.colourAccent){document.getElementById("bar").style.borderColor=d.colourAccent;document.getElementById("card").style.borderColor=d.colourAccent}
+ if(d.colourCard)document.getElementById("card").style.background=d.colourCard;
+ if(d.colourText)document.body.style.color=d.colourText;
+ document.getElementById("score").style.fontSize=d.fontScore?d.fontScore+"px":"";
+ document.querySelectorAll(".name").forEach(x=>x.style.fontSize=d.fontTeam?d.fontTeam+"px":"");
+ document.querySelectorAll(".player").forEach(x=>x.style.fontSize=d.fontPlayer?d.fontPlayer+"px":"");
+ document.getElementById("overs").style.fontSize=d.fontMeta?d.fontMeta+"px":"";
+ document.getElementById("bowlFigures").style.fontSize=d.fontMeta?d.fontMeta+"px":"";requestAnimationFrame(fitAllLabels);
+}
+function renderCustom(s){
+ const p=s.customPopup||{},layer=document.getElementById("customLayer");
+ const key=JSON.stringify(p);
+ if(key===lastCustomKey)return;lastCustomKey=key;clearTimeout(customTimer);
+ if(!p.visible){layer.classList.remove("visible");return}
+ const next=p.kind==="next";
+ document.getElementById("nextDetails").textContent=next?(p.details||"NEXT MATCH"):"";
+ document.getElementById("nextTeams").style.display=next?"flex":"none";
+ document.getElementById("customHeading").textContent=next?"":(p.text||"");
+ document.getElementById("customPic").src=next?"":(p.image||"");
+ document.getElementById("customPic").style.display=!next&&p.image?"block":"none";
+ document.getElementById("nextNameA").textContent=p.teamA||"TEAM A";
+ document.getElementById("nextNameB").textContent=p.teamB||"TEAM B";
+ document.getElementById("nextLogoA").src=p.logoA||"";
+ document.getElementById("nextLogoB").src=p.logoB||"";
+ document.getElementById("nextLogoA").style.visibility=p.logoA?"visible":"hidden";
+ document.getElementById("nextLogoB").style.visibility=p.logoB?"visible":"hidden";
+ layer.classList.add("visible");
+ customTimer=setTimeout(()=>layer.classList.remove("visible"),Math.max(2,Math.min(120,+p.duration||10))*1000);
+}
+
+function render(s){renderScore(s);applyDisplay(s);renderCustom(s)}
+socket.on("state",s=>{render(s);});
 </script></body></html>
