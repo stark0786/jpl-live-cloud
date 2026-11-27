@@ -24,8 +24,11 @@
 <div class="card"><h3 class="section-title">🎨 FONT & COLOUR SETTINGS</h3>
 <div class="grid">
 <div><label>Main Score Font (px)</label><input id="fontScore" type="range" min="24" max="90" value="48"></div>
-<div><label>Team Name Font (px)</label><input id="fontTeam" type="range" min="16" max="100" value="26"></div>
-<div><label>Batsman / Bowler Name Font (px)</label><input id="fontPlayer" type="range" min="16" max="100" value="30"></div>
+<div><label>Batting Team Name Font (px)</label><input id="fontBatTeam" type="range" min="18" max="120" value="42"></div>
+<div><label>Bowling Team Name Font (px)</label><input id="fontBowlTeam" type="range" min="18" max="120" value="42"></div>
+<div><label>Striker Name Font (px)</label><input id="fontStriker" type="range" min="18" max="120" value="42"></div>
+<div><label>Non-striker Name Font (px)</label><input id="fontNonStriker" type="range" min="18" max="120" value="38"></div>
+<div><label>Bowler Name Font (px)</label><input id="fontBowler" type="range" min="18" max="120" value="42"></div>
 <div><label>Overs / Figures Font (px)</label><input id="fontMeta" type="range" min="14" max="40" value="25"></div>
 <div><label>Scoreboard Background</label><input id="colourBar" type="color" value="#071d48"></div>
 <div><label>Scorecard Background</label><input id="colourCard" type="color" value="#071a34"></div>
@@ -96,12 +99,12 @@ async function imageDataForPopup(file,removeBg){
  x.putImageData(d,0,0);resolve(c.toDataURL("image/png"))};im.onerror=()=>resolve(raw);im.src=raw})
 }
 function applyDisplaySettings(){
- const displaySettings={fontScore:+$("fontScore").value,fontTeam:+$("fontTeam").value,fontPlayer:+$("fontPlayer").value,fontMeta:+$("fontMeta").value,colourBar:$("colourBar").value,colourCard:$("colourCard").value,colourAccent:$("colourAccent").value,colourText:$("colourText").value};
+ const displaySettings={fontScore:+$("fontScore").value,fontBatTeam:+$("fontBatTeam").value,fontBowlTeam:+$("fontBowlTeam").value,fontStriker:+$("fontStriker").value,fontNonStriker:+$("fontNonStriker").value,fontBowler:+$("fontBowler").value,fontMeta:+$("fontMeta").value,colourBar:$("colourBar").value,colourCard:$("colourCard").value,colourAccent:$("colourAccent").value,colourText:$("colourText").value};
  socket.emit("update",{displaySettings});setStatus("Font & colours applied");
 }
 function resetDisplaySettings(){
- const d={fontScore:48,fontTeam:26,fontPlayer:30,fontMeta:25,colourBar:"#071d48",colourCard:"#071a34",colourAccent:"#e7b84b",colourText:"#ffffff"};
- for(const [k,v] of Object.entries(d)){let id={fontScore:"fontScore",fontTeam:"fontTeam",fontPlayer:"fontPlayer",fontMeta:"fontMeta",colourBar:"colourBar",colourCard:"colourCard",colourAccent:"colourAccent",colourText:"colourText"}[k];$(id).value=v}
+ const d={fontScore:48,fontBatTeam:42,fontBowlTeam:42,fontStriker:42,fontNonStriker:38,fontBowler:42,fontMeta:25,colourBar:"#071d48",colourCard:"#071a34",colourAccent:"#e7b84b",colourText:"#ffffff"};
+ for(const [k,v] of Object.entries(d)){let id={fontScore:"fontScore",fontBatTeam:"fontBatTeam",fontBowlTeam:"fontBowlTeam",fontStriker:"fontStriker",fontNonStriker:"fontNonStriker",fontBowler:"fontBowler",fontMeta:"fontMeta",colourBar:"colourBar",colourCard:"colourCard",colourAccent:"colourAccent",colourText:"colourText"}[k];$(id).value=v}
  applyDisplaySettings();
 }
 async function showNextMatch(){
