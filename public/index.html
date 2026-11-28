@@ -24,11 +24,8 @@
 <div class="card"><h3 class="section-title">🎨 FONT & COLOUR SETTINGS</h3>
 <div class="grid">
 <div><label>Main Score Font (px)</label><input id="fontScore" type="range" min="24" max="90" value="48"></div>
-<div><label>Batting Team Name Font (px)</label><input id="fontBatTeam" type="range" min="18" max="120" value="42"></div>
-<div><label>Bowling Team Name Font (px)</label><input id="fontBowlTeam" type="range" min="18" max="120" value="42"></div>
-<div><label>Striker Name Font (px)</label><input id="fontStriker" type="range" min="18" max="120" value="42"></div>
-<div><label>Non-striker Name Font (px)</label><input id="fontNonStriker" type="range" min="18" max="120" value="38"></div>
-<div><label>Bowler Name Font (px)</label><input id="fontBowler" type="range" min="18" max="120" value="42"></div>
+<div><label>Team Name Font (px)</label><input id="fontTeam" type="range" min="16" max="100" value="26"></div>
+<div><label>Batsman / Bowler Name Font (px)</label><input id="fontPlayer" type="range" min="16" max="100" value="30"></div>
 <div><label>Overs / Figures Font (px)</label><input id="fontMeta" type="range" min="14" max="40" value="25"></div>
 <div><label>Scoreboard Background</label><input id="colourBar" type="color" value="#071d48"></div>
 <div><label>Scorecard Background</label><input id="colourCard" type="color" value="#071a34"></div>
@@ -52,11 +49,17 @@
 <div><label>Remove plain solid background (best for logos)</label><select id="removeBg"><option value="no">Off</option><option value="yes">Try remove corner-matched background</option></select></div><div><label>Popup Animation</label><select id="customAnimation"><option value="zoom">Zoom Pop</option><option value="slide">Slide In</option><option value="fade">Fade In</option></select></div>
 </div><button class="gold" onclick="showCustomPopup()">SHOW CUSTOM POPUP</button><button onclick="hideCustomPopup()">HIDE POPUP</button><p class="small">Background removal is an approximate solid-colour key; detailed or gradient backgrounds may need a transparent PNG.</p></div>
 <script>
-const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE", socket=io();let state=null,logos={logoA:"",logoB:"",tournamentLogo:""};
+const room=new URLSearchParams(location.search).get("room")||"JPL8LIVE", socket=io();let state=null,logos={logoA:"",logoB:"",tournamentLogo:""},firstRoomState=true,restoreSent=false;
+const BACKUP_KEY="jpl_room_backup_v2_"+room;
 const $=id=>document.getElementById(id);
 function setStatus(t){$("status").textContent=t}
 socket.on("connect",()=>{setStatus("Connected • "+room);socket.emit("join",room)});socket.on("disconnect",()=>setStatus("Disconnected"));
-socket.on("state",s=>{state=s;syncLogoPreviews();$("liveScore").textContent=`${s.score}/${s.wickets} (${Math.floor(s.balls/6)}.${s.balls%6})`;if(s.squads){$("squadA").value=(s.squads.A||[]).join("\\n");$("squadB").value=(s.squads.B||[]).join("\\n")}buildXI();fillPlayers()});
+socket.on("state",s=>{
+ if(firstRoomState){firstRoomState=false;let backup=null;try{backup=JSON.parse(localStorage.getItem(BACKUP_KEY)||"null")}catch(e){}
+  if(!restoreSent&&backup&&Number(backup._updatedAt||0)>Number(s._updatedAt||0)){restoreSent=true;setStatus("Restoring saved match data…");socket.emit("restore",backup);return;}}
+ state=s;try{const backup={...s,history:[]};localStorage.setItem(BACKUP_KEY,JSON.stringify(backup))}catch(e){setStatus("Connected • backup storage full; reduce logo image size")}
+ syncLogoPreviews();$("liveScore").textContent=`${s.score}/${s.wickets} (${Math.floor(s.balls/6)}.${s.balls%6})`;if(s.squads){$("squadA").value=(s.squads.A||[]).join("\n");$("squadB").value=(s.squads.B||[]).join("\n")}buildXI();fillPlayers();
+});
 function fileData(file){return new Promise((resolve,reject)=>{if(!file)return resolve("");if(!file.type.startsWith("image/"))return reject(new Error("Please choose an image file"));let r=new FileReader();r.onerror=()=>reject(new Error("Image could not be read"));r.onload=()=>{let im=new Image();im.onload=()=>{let scale=Math.min(1,700/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));c.getContext("2d").drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL("image/png"))};im.onerror=()=>reject(new Error("Invalid image"));im.src=r.result};r.readAsDataURL(file)})}
 function showLogoPreview(id,data){let el=$(id);if(!el)return;el.src=data||"";el.style.display=data?"block":"none"}
 function syncLogoPreviews(){showLogoPreview("previewTournament",state?.tournamentLogo);showLogoPreview("previewA",state?.logoA);showLogoPreview("previewB",state?.logoB)}
@@ -99,12 +102,12 @@ async function imageDataForPopup(file,removeBg){
  x.putImageData(d,0,0);resolve(c.toDataURL("image/png"))};im.onerror=()=>resolve(raw);im.src=raw})
 }
 function applyDisplaySettings(){
- const displaySettings={fontScore:+$("fontScore").value,fontBatTeam:+$("fontBatTeam").value,fontBowlTeam:+$("fontBowlTeam").value,fontStriker:+$("fontStriker").value,fontNonStriker:+$("fontNonStriker").value,fontBowler:+$("fontBowler").value,fontMeta:+$("fontMeta").value,colourBar:$("colourBar").value,colourCard:$("colourCard").value,colourAccent:$("colourAccent").value,colourText:$("colourText").value};
+ const displaySettings={fontScore:+$("fontScore").value,fontTeam:+$("fontTeam").value,fontPlayer:+$("fontPlayer").value,fontMeta:+$("fontMeta").value,colourBar:$("colourBar").value,colourCard:$("colourCard").value,colourAccent:$("colourAccent").value,colourText:$("colourText").value};
  socket.emit("update",{displaySettings});setStatus("Font & colours applied");
 }
 function resetDisplaySettings(){
- const d={fontScore:48,fontBatTeam:42,fontBowlTeam:42,fontStriker:42,fontNonStriker:38,fontBowler:42,fontMeta:25,colourBar:"#071d48",colourCard:"#071a34",colourAccent:"#e7b84b",colourText:"#ffffff"};
- for(const [k,v] of Object.entries(d)){let id={fontScore:"fontScore",fontBatTeam:"fontBatTeam",fontBowlTeam:"fontBowlTeam",fontStriker:"fontStriker",fontNonStriker:"fontNonStriker",fontBowler:"fontBowler",fontMeta:"fontMeta",colourBar:"colourBar",colourCard:"colourCard",colourAccent:"colourAccent",colourText:"colourText"}[k];$(id).value=v}
+ const d={fontScore:48,fontTeam:26,fontPlayer:30,fontMeta:25,colourBar:"#071d48",colourCard:"#071a34",colourAccent:"#e7b84b",colourText:"#ffffff"};
+ for(const [k,v] of Object.entries(d)){let id={fontScore:"fontScore",fontTeam:"fontTeam",fontPlayer:"fontPlayer",fontMeta:"fontMeta",colourBar:"colourBar",colourCard:"colourCard",colourAccent:"colourAccent",colourText:"colourText"}[k];$(id).value=v}
  applyDisplaySettings();
 }
 async function showNextMatch(){
