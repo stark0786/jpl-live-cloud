@@ -17,14 +17,14 @@ const blank = () => ({
   score: 0, wickets: 0, balls: 0, striker: "", nonStriker: "", bowler: "",
   squads: { A: [], B: [] }, playingXI: { A: [], B: [] }, playingXITitle: "JHAGARIYA PREMIER LEAGUE", playingXIVisible: false, overlayAction: 0, overlayMode: "show", battingStats: [], bowlingStats: [], extras: { wd: 0, nb: 0, b: 0, lb: 0 },
   fallOfWickets: [], oversLog: [], currentOver: [], history: [], announcement: "", announcementType: "",
-  scorecardMode: "batting", scorecardVisible: false, displaySettings: {}, nextMatch: {}, customPopup: {visible:false}, inningsComplete: false
+  scorecardMode: "batting", scorecardVisible: false, displaySettings: {}, nextMatch: {}, customPopup: {visible:false}, inningsComplete: false, _updatedAt: 0
 });
 const rooms = new Map();
 function getState(room) {
   if (!rooms.has(room)) rooms.set(room, blank());
   return rooms.get(room);
 }
-function emit(room) { io.to(room).emit("state", getState(room)); }
+function emit(room) { const s=getState(room); s._updatedAt=Date.now(); io.to(room).emit("state", s); }
 function nameFor(s, key) { return key === "A" ? s.teamA : s.teamB; }
 function ensureBatter(s, name) {
   if (!name) return null;
@@ -128,6 +128,15 @@ function applyBall(s, b) {
 }
 io.on("connection", socket => {
   socket.on("join", room => { room = String(room || ROOM_DEFAULT); socket.join(room); socket.data.room = room; socket.emit("state", getState(room)); });
+  socket.on("restore", data => {
+    const room=socket.data.room||ROOM_DEFAULT;
+    if (!data || typeof data !== "object") return;
+    const s=getState(room);
+    const allowed=["tournament","match","tournamentLogo","teamA","teamB","logoA","logoB","battingTeam","totalOvers","target","score","wickets","balls","striker","nonStriker","bowler","squads","playingXI","playingXITitle","playingXIVisible","overlayAction","overlayMode","battingStats","bowlingStats","extras","fallOfWickets","oversLog","currentOver","announcement","announcementType","scorecardMode","scorecardVisible","displaySettings","nextMatch","customPopup","inningsComplete"];
+    for (const k of allowed) if (data[k] !== undefined) s[k]=data[k];
+    s.history=[];
+    emit(room);
+  });
   socket.on("update", data => {
     const room = socket.data.room || ROOM_DEFAULT, s = getState(room);
     const allowed = ["tournament","match","tournamentLogo","teamA","teamB","logoA","logoB","battingTeam","totalOvers","target","striker","nonStriker","bowler","squads","playingXI","playingXITitle","playingXIVisible","displaySettings","nextMatch","customPopup"]
